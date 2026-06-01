@@ -2,81 +2,97 @@
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 body {
-    background-color: #0b0c10;
-    color: #c5c6c7;
+    background-color: #050505;
+    color: #ffffff;
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
-    padding: 20px;
-    text-align: center;
+    overflow: hidden;
+    transition: background-color 0.2s ease;
 }
 
 .container {
-    max-width: 400px;
     width: 100%;
-    padding: 30px;
-    border-radius: 20px;
-    background: #1f2833;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    max-width: 360px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 h1 {
-    color: #66fcf1;
-    font-size: 2rem;
-    margin-bottom: 10px;
+    font-size: 1.5rem;
+    font-weight: 400;
+    letter-spacing: 2px;
+    color: #a0a0a0;
+    text-transform: uppercase;
+    margin-bottom: 5px;
 }
 
 .description {
-    font-size: 0.9rem;
-    color: #45f3ff;
-    margin-bottom: 30px;
+    font-size: 0.85rem;
+    color: #606060;
+    margin-bottom: 50px;
 }
 
 #timer {
-    font-size: 4rem;
-    font-weight: bold;
+    font-size: 5.5rem;
+    font-weight: 200;
     color: #ffffff;
-    margin: 20px 0;
+    margin-bottom: 20px;
     font-variant-numeric: tabular-nums;
+    letter-spacing: -2px;
 }
 
 #status {
-    font-size: 1.1rem;
-    margin-bottom: 30px;
-    color: #c5c6c7;
-    transition: color 0.3s;
+    font-size: 0.95rem;
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #00ffcc;
+    margin-bottom: 60px;
+    min-height: 20px;
 }
 
 button {
-    background-color: #66fcf1;
-    color: #0b0c10;
-    border: none;
-    padding: 15px 30px;
-    font-size: 1.1rem;
-    font-weight: bold;
-    border-radius: 10px;
+    background: none;
+    border: 2px solid #00ffcc;
+    color: #00ffcc;
+    padding: 16px 40px;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    border-radius: 50px;
     cursor: pointer;
     width: 100%;
-    transition: all 0.2s;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 15px rgba(0, 255, 204, 0.1);
 }
 
 button:active {
-    transform: scale(0.98);
-    background-color: #45f3ff;
+    transform: scale(0.96);
+    background-color: rgba(0, 255, 204, 0.1);
 }
 
-/* Klase koje JS dodaje kada se aktivira alarm */
-.alarm-active {
-    background-color: #8b0000 !important;
-    animation: flash 0.5s infinite alternate;
+/* Kada se aplikacija pokrene, dugme se menja */
+button.active-mode {
+    border-color: #ff3366;
+    color: #ff3366;
+    box-shadow: 0 0 15px rgba(255, 51, 102, 0.1);
 }
 
-@keyframes flash {
-    from { background-color: #1f2833; }
-    to { background-color: #4a0000; }
+/* Efekat kada se aktivira alarm – ekran pulsira u crveno */
+body.alarm-active {
+    background-color: #200005;
+    animation: pulseBg 1s infinite alternate;
+}
+
+@keyframes pulseBg {
+    from { background-color: #100002; }
+    to { background-color: #35000a; }
 }
