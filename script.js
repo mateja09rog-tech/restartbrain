@@ -1,15 +1,14 @@
 let isRunning = false;
 let alarmPlaying = false;
 let countdownInterval;
-let timeLeft = 600; // 10 minuta u sekundama
+let alarmTimeout; // Pametni tajmer za sprečavanje seckanja
+let timeLeft = 600;
 
-// Audio varijable
 let audioCtx = null;
 let oscillator = null;
 
-// Varijable za žiroskop
 let lastX = null, lastY = null, lastZ = null;
-const SENSITIVITY = 3; // Koliko stepeni nagiba aktivira alarm (manje = osetljivije)
+const SENSITIVITY = 4; // Malo smanjena osetljivost da ne reaguje na disanje
 
 const startBtn = document.getElementById('startBtn');
 const timerDisplay = document.getElementById('timer');
@@ -25,87 +24,79 @@ startBtn.addEventListener('click', () => {
 
 function startApp() {
     isRunning = true;
-    startBtn.textContent = "ZAUSTAVI";
-    statusDisplay.textContent = "Status: Spusti telefon!";
-    statusDisplay.style.color = "#66fcf1";
+    startBtn.textContent = "PREKINI REBOOT";
+    startBtn.classList.add('active-mode');
+    statusDisplay.textContent = "SADA SPUSTI TELEFON";
+    statusDisplay.style.color = "#00ffcc";
     
-    // 1. Pokretanje audio konteksta (mora na klik korisnika)
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     
-    // 2. Traženje dozvole za senzore (bitno za iOS/novije Android uređaje)
     if (typeof DeviceOrientationEvent.requestPermission === 'function') {
         DeviceOrientationEvent.requestPermission()
             .then(permissionState => {
                 if (permissionState === 'granted') {
                     window.addEventListener('deviceorientation', handleMotion);
-                } else {
-                    alert('Morate dozvoliti pristup senzorima da bi aplikacija radila.');
                 }
             })
             .catch(console.error);
     } else {
-        // Stariji Androidi automatski daju dozvolu
         window.addEventListener('deviceorientation', handleMotion);
     }
 
-    // 3. Pokretanje tajmera
     startTimer();
-    
-    // 4. Pokušaj zaključavanja ekrana da se ne ugasi (Wake Lock)
     requestWakeLock();
 }
 
 function handleMotion(event) {
     if (!isRunning) return;
 
-    let x = event.beta;  // Nagib napred-nazad (-180 do 180)
-    let y = event.gamma; // Nagib levo-desno (-90 do 90)
-    let z = event.alpha; // Rotacija oko ose (0 do 360)
+    let x = event.beta;
+    let y = event.gamma;
 
-    // Ako je ovo prvi prolaz, samo zapiši početne pozicije
     if (lastX === null) {
-        lastX = x; lastY = y; lastZ = z;
+        lastX = x; lastY = y;
         return;
     }
 
-    // Izračunaj koliko se telefon pomerio od poslednjeg čitanja
     let diffX = Math.abs(lastX - x);
     let diffY = Math.abs(lastY - y);
 
-    // Ako je pomeraj veći od osetljivosti -> PALI ALARM
     if (diffX > SENSITIVITY || diffY > SENSITIVITY) {
+        // Ako je detektovan pokret, upali alarm (ili produži njegovo trajanje)
         playAlarm();
-    } else {
-        // Ako miruje duže od 1.5 sekundi, ugasi alarm
-        setTimeout(stopAlarm, 1500);
     }
 
-    // Sačuvaj trenutne pozicije za sledeću proveru
-    lastX = x; lastY = y; lastZ = z;
+    lastX = x; lastY = y;
 }
 
 function playAlarm() {
-    if (alarmPlaying) return;
-    alarmPlaying = true;
+    // Ako se telefon pomerio, poništi prethodno zakazano gašenje zvuka
+    clearTimeout(alarmTimeout);
 
-    statusDisplay.textContent = "Status: VRATI TELEFON NA STO!";
-    statusDisplay.style.color = "#ff4c4c";
-    document.body.classList.add('alarm-active');
+    if (!alarmPlaying) {
+        alarmPlaying = true;
+        statusDisplay.textContent = "VRATI NA STO!";
+        statusDisplay.style.color = "#ff3366";
+        document.body.classList.add('alarm-active');
 
-    // Generisanje piskavog tona kroz kod
-    oscillator = audioCtx.createOscillator();
-    oscillator.type = 'sawtooth'; // Iritantan zvuk rezanja
-    oscillator.frequency.setValueAtTime(850, audioCtx.currentTime); // 850 Hz piskavo
-    oscillator.connect(audioCtx.destination);
-    oscillator.start();
+        // Pokretanje zvuka
+        oscillator = audioCtx.createOscillator();
+        oscillator.type = 'sawtooth';
+        oscillator.frequency.setValueAtTime(900, audioCtx.currentTime); // Malo piskavija frekvencija
+        oscillator.connect(audioCtx.destination);
+        oscillator.start();
+    }
+
+    // Zakaži gašenje alarma tek NAKON što je telefon miran punih 1.2 sekunde
+    alarmTimeout = setTimeout(stopAlarm, 1200);
 }
 
 function stopAlarm() {
     if (!alarmPlaying) return;
     alarmPlaying = false;
 
-    statusDisplay.textContent = "Status: Mirno... Mozak se resetuje.";
-    statusDisplay.style.color = "#66fcf1";
+    statusDisplay.textContent = "FOKUS NA NIVOU...";
+    statusDisplay.style.color = "#00ffcc";
     document.body.classList.remove('alarm-active');
 
     if (oscillator) {
@@ -124,7 +115,7 @@ function startTimer() {
 
         if (timeLeft <= 0) {
             clearInterval(countdownInterval);
-            statusDisplay.textContent = "Uspjeh! Mozak ti je resetovan.";
+            statusDisplay.textContent = "ZAVRŠENO!";
             stopApp();
         }
     }, 1000);
@@ -133,23 +124,25 @@ function startTimer() {
 function stopApp() {
     isRunning = false;
     clearInterval(countdownInterval);
+    clearTimeout(alarmTimeout);
     stopAlarm();
     window.removeEventListener('deviceorientation', handleMotion);
+    
     startBtn.textContent = "POKRENI REBOOT";
-    statusDisplay.textContent = "Status: Zaustavljeno";
-    statusDisplay.style.color = "#c5c6c7";
+    startBtn.classList.remove('active-mode');
+    statusDisplay.textContent = "ČEKA SE POKRETANJE";
+    statusDisplay.style.color = "#a0a0a0";
     timeLeft = 600;
     timerDisplay.textContent = "10:00";
-    lastX = null; lastY = null; lastZ = null;
+    lastX = null; lastY = null;
 }
 
-// Funkcija koja drži ekran upaljenim
 async function requestWakeLock() {
     try {
         if ('wakeLock' in navigator) {
             await navigator.wakeLock.request('screen');
         }
     } catch (err) {
-        console.log(`Wake Lock greška: ${err.message}`);
+        console.log(`Wake Lock: ${err.message}`);
     }
 }
